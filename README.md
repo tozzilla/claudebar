@@ -137,6 +137,9 @@ brew install --cask tozzilla/tachybar/tachybar
 open /Applications/TachyBar.app
 ```
 
+If Homebrew asks you to trust the tap first, run `brew trust tozzilla/tachybar`
+(or `brew tap tozzilla/tachybar`) and re-run the install.
+
 The cask installs the **signed and notarized** build, so it opens with no
 Gatekeeper warnings.
 
