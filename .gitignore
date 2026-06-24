@@ -3,8 +3,12 @@
 *.xcodeproj
 .swiftpm/
 
-# Assembled app bundle (produced by build.sh)
+# Assembled app bundle (produced by build.sh) and release archives
 ClaudeBar.app/
+ClaudeBar-*.zip
 
 # macOS
 .DS_Store
+
+# Local-only notarization script (not distributed)
+notarize.sh

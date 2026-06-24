@@ -52,16 +52,23 @@ the full breakdown.
   their reset day/time; the currently active limit is highlighted.
 - **Extra-usage credits** — your monthly credit spend in your billing currency
   (e.g. `€90.01 / €150.00`).
+- **Color-coded at a glance** — a tinted dot and percentage in the bar: 🟢 ≤64 ·
+  🟡 65–84 · 🔴 ≥85.
+- **Threshold notifications** — optional macOS notification when any limit crosses
+  your alert threshold (default 85%), once per reset window.
+- **Choose what the bar shows** — current session, top weekly limit, or
+  automatic (whichever is most binding).
 - **Exact console parity** — reads the same authenticated endpoint the Claude
   console uses, so the numbers always match.
-- **Gentle on the API** — fetches at most once every ~3 minutes, ticks the
-  countdown locally in between, and backs off automatically on HTTP 429
-  (honoring `Retry-After`).
+- **Gentle on the API** — fetches at most once every few minutes (configurable),
+  ticks the countdown locally in between, refreshes on wake/network return, and
+  backs off automatically on HTTP 429 (honoring `Retry-After`).
 - **Native & tiny** — a single Swift binary for Apple Silicon, **zero
   dependencies**, no Electron, negligible memory and CPU.
 - **Private by design** — reads your token from the macOS Keychain at runtime
   and talks only to Anthropic's API. Nothing is logged or sent anywhere else.
-- **Launch at login** — one toggle in the menu (`SMAppService`).
+- **Preferences in the menu** — bar metric, notifications, alert threshold,
+  refresh interval, launch at login, and a quick link to the usage console.
 
 ---
 
@@ -121,7 +128,25 @@ as you use Claude Code (which refreshes it). If it expires, ClaudeBar shows
 
 ---
 
-## Installation (build from source)
+## Installation
+
+### Homebrew (recommended)
+
+```bash
+brew install --cask tozzilla/claudebar/claudebar
+open /Applications/ClaudeBar.app
+```
+
+The cask installs the **signed and notarized** build, so it opens with no
+Gatekeeper warnings.
+
+### Download
+
+Grab the notarized `ClaudeBar-<version>.zip` from the
+[latest release](https://github.com/tozzilla/claudebar/releases/latest), unzip,
+and move `ClaudeBar.app` to `/Applications`.
+
+### Build from source
 
 ```bash
 git clone https://github.com/tozzilla/claudebar.git

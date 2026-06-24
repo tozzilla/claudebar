@@ -24,8 +24,8 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
     <key>CFBundleName</key>            <string>ClaudeBar</string>
     <key>CFBundleDisplayName</key>     <string>ClaudeBar</string>
     <key>CFBundleIdentifier</key>      <string>app.claudebar.menubar</string>
-    <key>CFBundleVersion</key>         <string>1.0</string>
-    <key>CFBundleShortVersionString</key><string>1.0</string>
+    <key>CFBundleVersion</key>         <string>1.1.0</string>
+    <key>CFBundleShortVersionString</key><string>1.1.0</string>
     <key>CFBundleExecutable</key>      <string>ClaudeBar</string>
     <key>CFBundlePackageType</key>     <string>APPL</string>
     <key>LSMinimumSystemVersion</key>  <string>13.0</string>

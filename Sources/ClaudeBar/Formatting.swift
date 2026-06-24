@@ -68,4 +68,11 @@ enum Fmt {
         return f
     }()
     static func weekdayTime(_ d: Date) -> String { weekday.string(from: d) }
+
+    /// "tra 2h 31m" if within a day, otherwise "lun 02:59".
+    static func smartReset(_ d: Date) -> String {
+        let dt = d.timeIntervalSinceNow
+        if dt > 0, dt < 86_400 { return "tra " + duration(dt) }
+        return weekdayTime(d)
+    }
 }
