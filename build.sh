@@ -24,8 +24,8 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
     <key>CFBundleName</key>            <string>TachyBar for AI</string>
     <key>CFBundleDisplayName</key>     <string>TachyBar for AI</string>
     <key>CFBundleIdentifier</key>      <string>app.tachybar.menubar</string>
-    <key>CFBundleVersion</key>         <string>1.1.1</string>
-    <key>CFBundleShortVersionString</key><string>1.1.1</string>
+    <key>CFBundleVersion</key>         <string>1.2.0</string>
+    <key>CFBundleShortVersionString</key><string>1.2.0</string>
     <key>CFBundleExecutable</key>      <string>TachyBar</string>
     <key>CFBundlePackageType</key>     <string>APPL</string>
     <key>LSMinimumSystemVersion</key>  <string>13.0</string>

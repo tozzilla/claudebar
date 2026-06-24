@@ -52,10 +52,12 @@ the full breakdown.
   their reset day/time; the currently active limit is highlighted.
 - **Extra-usage credits** — your monthly credit spend in your billing currency
   (e.g. `€90.01 / €150.00`).
-- **Color-coded at a glance** — a tinted dot and percentage in the bar: 🟢 ≤64 ·
-  🟡 65–84 · 🔴 ≥85.
-- **Threshold notifications** — optional macOS notification when any limit crosses
-  your alert threshold (default 85%), once per reset window.
+- **Color-coded at a glance** — a tinted dot and percentage in the bar, plus
+  colored progress bars in the dropdown: 🟢 ≤64 · 🟡 65–84 · 🔴 ≥85.
+- **Burn-rate projection** — estimates your session burn rate (%/h) and tells you
+  whether you'll run out before the reset, or hold.
+- **Threshold notifications** — optional macOS notifications at the warning (65%)
+  and critical (configurable, default 85%) bands, once per reset window.
 - **Choose what the bar shows** — current session, top weekly limit, or
   automatic (whichever is most binding).
 - **Exact console parity** — reads the same authenticated endpoint the Claude

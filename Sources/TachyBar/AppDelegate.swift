@@ -19,6 +19,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var tokenExpired = false
     private var backoffUntil: Date?
     private var lastFetchAt: Date?
+    private var sessionSamples: [(t: Date, pct: Double)] = []  // for burn-rate / projection
 
     private let barFont = NSFont.menuBarFont(ofSize: 0)
     private let consoleURL = URL(string: "https://claude.ai/settings/usage")!
@@ -95,28 +96,58 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             statusNote = nil
             tokenExpired = false
             backoffUntil = nil
+            recordSample(usage)
             checkNotifications(usage)
         }
         updateTitle()
+    }
+
+    // MARK: - Burn rate / projection
+
+    private let warnThreshold = 65.0  // entering the yellow band
+
+    /// Record the session % over time so we can estimate a burn rate. Resets
+    /// the series when the window rolls over (a big drop in %).
+    private func recordSample(_ u: LiveUsage) {
+        guard let s = u.session else { return }
+        let now = Date()
+        if let lastS = sessionSamples.last, s.percent < lastS.pct - 5 { sessionSamples.removeAll() }
+        sessionSamples.append((now, s.percent))
+        sessionSamples.removeAll { now.timeIntervalSince($0.t) > 3600 }
+    }
+
+    /// Percent-per-hour over the retained window, or nil if not enough data.
+    private func burnRatePerHour() -> Double? {
+        guard let a = sessionSamples.first, let b = sessionSamples.last, sessionSamples.count >= 2 else { return nil }
+        let dtHours = b.t.timeIntervalSince(a.t) / 3600
+        guard dtHours >= 0.05 else { return nil }  // need ≥ ~3 min of span
+        return (b.pct - a.pct) / dtHours
     }
 
     // MARK: - Notifications
 
     private func checkNotifications(_ u: LiveUsage) {
         guard Prefs.notificationsEnabled, notifier.available else { return }
-        let threshold = Double(Prefs.alertThreshold)
+        let crit = Double(Prefs.alertThreshold)
         var tracked: [LimitBar] = []
         if let s = u.session { tracked.append(s) }
         tracked.append(contentsOf: u.weekly)
 
         var notified = Prefs.notifiedKeys
-        for bar in tracked where bar.percent >= threshold {
-            // One notification per (limit, reset window, threshold).
+        for bar in tracked {
+            let level: String
+            if bar.percent >= crit { level = "crit" }
+            else if bar.percent >= warnThreshold { level = "warn" }
+            else { continue }
+            // One notification per (limit, reset window, level).
             let resetKey = bar.resetAt.map { String(Int($0.timeIntervalSince1970)) } ?? "na"
-            let key = "\(bar.label)@\(resetKey)@\(Prefs.alertThreshold)"
+            let key = "\(bar.label)@\(resetKey)@\(level)"
             guard !notified.contains(key) else { continue }
             let body = bar.resetAt.map { "Reset \(Fmt.smartReset($0))" } ?? ""
-            notifier.notify(title: "Claude · \(bar.label) al \(Fmt.percent(bar.percent))", body: body)
+            let title = level == "crit"
+                ? "⚠️ \(bar.label) al \(Fmt.percent(bar.percent)) — soglia critica"
+                : "\(bar.label) al \(Fmt.percent(bar.percent)) — avviso"
+            notifier.notify(title: title, body: body)
             notified.append(key)
         }
         Prefs.notifiedKeys = notified
@@ -213,20 +244,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if let u = last {
             if let s = u.session {
                 menu.addItem(header("Sessione corrente"))
-                var line = "  \(Fmt.percent(s.percent)) utilizzato"
+                var trailing = ""
                 if let reset = s.resetAt {
-                    line += " · reset tra \(Fmt.duration(reset.timeIntervalSinceNow)) (\(Fmt.time(reset)))"
+                    trailing = "· reset tra \(Fmt.duration(reset.timeIntervalSinceNow)) (\(Fmt.time(reset)))"
                 }
-                menu.addItem(coloredRow(line, colorPart: Fmt.percent(s.percent), percent: s.percent))
+                menu.addItem(gaugeRow(percent: s.percent, trailing: trailing))
+                if let rate = burnRatePerHour(), rate > 0.5 {
+                    var bl = "  Ritmo ~\(Int(rate.rounded()))%/h"
+                    if let reset = s.resetAt, s.percent < 100 {
+                        let exhaust = Date().addingTimeInterval((100 - s.percent) / rate * 3600)
+                        bl += exhaust < reset ? " · esaurita ~\(Fmt.time(exhaust)) (prima del reset)" : " · regge fino al reset"
+                    }
+                    menu.addItem(info(bl))
+                }
             }
 
             if !u.weekly.isEmpty {
                 menu.addItem(.separator())
                 menu.addItem(header("Limiti settimanali"))
                 for w in u.weekly {
-                    var line = "  \(w.label): \(Fmt.percent(w.percent))"
-                    if let reset = w.resetAt { line += " · reset \(Fmt.weekdayTime(reset))" }
-                    menu.addItem(coloredRow(line, colorPart: Fmt.percent(w.percent), percent: w.percent, bold: w.isActive))
+                    var trailing = w.label
+                    if let reset = w.resetAt { trailing += " · \(Fmt.weekdayTime(reset))" }
+                    menu.addItem(gaugeRow(percent: w.percent, trailing: trailing, bold: w.isActive))
                 }
             }
 
@@ -330,15 +369,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         return item
     }
 
-    private func coloredRow(_ full: String, colorPart: String, percent: Double, bold: Bool = false) -> NSMenuItem {
-        let item = NSMenuItem(title: full, action: nil, keyEquivalent: "")
+    /// A 10-segment colored progress bar (█ filled in usage color, ░ empty).
+    private func barString(_ percent: Double, font: NSFont) -> NSAttributedString {
+        let width = 10
+        let filled = max(0, min(width, Int((percent / 100.0 * Double(width)).rounded())))
+        let s = NSMutableAttributedString()
+        s.append(NSAttributedString(string: String(repeating: "█", count: filled),
+                                    attributes: [.foregroundColor: usageColor(percent), .font: font]))
+        s.append(NSAttributedString(string: String(repeating: "░", count: width - filled),
+                                    attributes: [.foregroundColor: NSColor.tertiaryLabelColor, .font: font]))
+        return s
+    }
+
+    /// Info row: `  ██████░░░░  41%  <trailing>` with the bar+percent colored.
+    private func gaugeRow(percent: Double, trailing: String, bold: Bool = false) -> NSMenuItem {
+        let item = NSMenuItem(title: trailing, action: nil, keyEquivalent: "")
         item.isEnabled = false
-        let baseFont = bold ? NSFont.boldSystemFont(ofSize: NSFont.systemFontSize) : NSFont.menuFont(ofSize: 0)
-        let attr = NSMutableAttributedString(
-            string: full, attributes: [.foregroundColor: NSColor.labelColor, .font: baseFont]
-        )
-        if let r = full.range(of: colorPart) {
-            attr.addAttribute(.foregroundColor, value: usageColor(percent), range: NSRange(r, in: full))
+        let mono = NSFont.monospacedSystemFont(ofSize: NSFont.systemFontSize - 1, weight: .regular)
+        let body = bold ? NSFont.boldSystemFont(ofSize: NSFont.systemFontSize) : NSFont.menuFont(ofSize: 0)
+        let attr = NSMutableAttributedString(string: "  ")
+        attr.append(barString(percent, font: mono))
+        attr.append(NSAttributedString(string: "  "))
+        attr.append(NSAttributedString(string: String(format: "%3d%%", Int(percent.rounded())),
+                                       attributes: [.foregroundColor: usageColor(percent), .font: mono]))
+        if !trailing.isEmpty {
+            attr.append(NSAttributedString(string: "  " + trailing,
+                                           attributes: [.foregroundColor: NSColor.labelColor, .font: body]))
         }
         item.attributedTitle = attr
         return item
