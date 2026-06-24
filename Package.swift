@@ -2,12 +2,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "ClaudeBar",
+    name: "TachyBar",
     platforms: [.macOS(.v13)],
     targets: [
         .executableTarget(
-            name: "ClaudeBar",
-            path: "Sources/ClaudeBar"
+            name: "TachyBar",
+            path: "Sources/TachyBar"
         )
     ]
 )

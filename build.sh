@@ -1,32 +1,32 @@
 #!/usr/bin/env bash
-# Builds ClaudeBar and assembles a standalone ClaudeBar.app bundle.
+# Builds TachyBar and assembles a standalone TachyBar.app bundle.
 set -euo pipefail
 cd "$(dirname "$0")"
 
 echo "==> Building (release)..."
 swift build -c release
 
-BIN=".build/release/ClaudeBar"
-APP="ClaudeBar.app"
+BIN=".build/release/TachyBar"
+APP="TachyBar.app"
 MACOS="$APP/Contents/MacOS"
 RES="$APP/Contents/Resources"
 
 echo "==> Assembling $APP..."
 rm -rf "$APP"
 mkdir -p "$MACOS" "$RES"
-cp "$BIN" "$MACOS/ClaudeBar"
+cp "$BIN" "$MACOS/TachyBar"
 
 cat > "$APP/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleName</key>            <string>ClaudeBar</string>
-    <key>CFBundleDisplayName</key>     <string>ClaudeBar</string>
-    <key>CFBundleIdentifier</key>      <string>app.claudebar.menubar</string>
-    <key>CFBundleVersion</key>         <string>1.1.0</string>
-    <key>CFBundleShortVersionString</key><string>1.1.0</string>
-    <key>CFBundleExecutable</key>      <string>ClaudeBar</string>
+    <key>CFBundleName</key>            <string>TachyBar for AI</string>
+    <key>CFBundleDisplayName</key>     <string>TachyBar for AI</string>
+    <key>CFBundleIdentifier</key>      <string>app.tachybar.menubar</string>
+    <key>CFBundleVersion</key>         <string>1.1.1</string>
+    <key>CFBundleShortVersionString</key><string>1.1.1</string>
+    <key>CFBundleExecutable</key>      <string>TachyBar</string>
     <key>CFBundlePackageType</key>     <string>APPL</string>
     <key>LSMinimumSystemVersion</key>  <string>13.0</string>
     <!-- Menu-bar agent: no Dock icon, no app switcher entry. -->

@@ -1,6 +1,6 @@
-# ClaudeBar — Claude usage in your macOS menu bar
+# TachyBar for AI — Claude usage in your macOS menu bar
 
-**ClaudeBar** is a lightweight, native **macOS menu bar app** that shows your
+**TachyBar** is a lightweight, native **macOS menu bar app** that shows your
 **live Claude usage** at a glance: your **current session percentage**, **weekly
 limits**, **reset times**, and **extra-usage credits** — the exact same numbers
 as the official Claude usage console, right in your status bar.
@@ -72,7 +72,7 @@ the full breakdown.
 
 ---
 
-## Why ClaudeBar (and how it differs from ccusage)
+## Why TachyBar (and how it differs from ccusage)
 
 Tools like [`ccusage`](https://github.com/ryoppippi/ccusage) read your local
 transcript logs in `~/.claude/projects/**/*.jsonl` and **estimate** usage from
@@ -80,11 +80,11 @@ token counts. That's great for cost analysis, but those logs contain only token
 counts — **the console's real percentages are not derivable from them**, so a
 token-log estimator can't match the official "you've used X%" numbers.
 
-ClaudeBar takes the other approach: it reads the **same authenticated usage
+TachyBar takes the other approach: it reads the **same authenticated usage
 endpoint the Claude console itself uses**, so what you see in the menu bar is
 exactly what you'd see in the console — no estimation, no drift.
 
-| | Token-log estimators (ccusage-style) | **ClaudeBar** |
+| | Token-log estimators (ccusage-style) | **TachyBar** |
 |---|---|---|
 | Data source | local JSONL token logs | official `api/oauth/usage` |
 | Session / weekly % | estimated | **exact (console parity)** |
@@ -92,7 +92,7 @@ exactly what you'd see in the console — no estimation, no drift.
 | Extra-usage credits (€/$) | ✗ | **✓** |
 | Dollar cost estimate | ✓ | ✗ (shows plan %, not $ per token) |
 
-Use ccusage for per-project token/cost accounting; use ClaudeBar to mirror your
+Use ccusage for per-project token/cost accounting; use TachyBar to mirror your
 plan limits live.
 
 ---
@@ -101,7 +101,7 @@ plan limits live.
 
 ```mermaid
 flowchart LR
-    A[ClaudeBar] -->|reads OAuth token| B[(macOS Keychain<br/>Claude Code-credentials)]
+    A[TachyBar] -->|reads OAuth token| B[(macOS Keychain<br/>Claude Code-credentials)]
     A -->|GET /api/oauth/usage<br/>Bearer token| C[Anthropic API]
     C -->|session % · weekly % · reset · credits| A
     A --> D[Menu bar title + dropdown]
@@ -113,7 +113,7 @@ flowchart LR
 3. Renders session/weekly limits, reset times, and credits in the menu bar.
 
 The token is re-read from the Keychain on every fetch, so it stays valid as long
-as you use Claude Code (which refreshes it). If it expires, ClaudeBar shows
+as you use Claude Code (which refreshes it). If it expires, TachyBar shows
 `⚠︎ login` — just reopen Claude Code to refresh it.
 
 ---
@@ -133,8 +133,8 @@ as you use Claude Code (which refreshes it). If it expires, ClaudeBar shows
 ### Homebrew (recommended)
 
 ```bash
-brew install --cask tozzilla/claudebar/claudebar
-open /Applications/ClaudeBar.app
+brew install --cask tozzilla/tachybar/tachybar
+open /Applications/TachyBar.app
 ```
 
 The cask installs the **signed and notarized** build, so it opens with no
@@ -142,22 +142,22 @@ Gatekeeper warnings.
 
 ### Download
 
-Grab the notarized `ClaudeBar-<version>.zip` from the
-[latest release](https://github.com/tozzilla/claudebar/releases/latest), unzip,
-and move `ClaudeBar.app` to `/Applications`.
+Grab the notarized `TachyBar-<version>.zip` from the
+[latest release](https://github.com/tozzilla/tachybar/releases/latest), unzip,
+and move `TachyBar.app` to `/Applications`.
 
 ### Build from source
 
 ```bash
-git clone https://github.com/tozzilla/claudebar.git
-cd claudebar
+git clone https://github.com/tozzilla/tachybar.git
+cd tachybar
 
-# Build a standalone ClaudeBar.app
+# Build a standalone TachyBar.app
 ./build.sh
 
 # Install and launch
-cp -r ClaudeBar.app /Applications/
-open /Applications/ClaudeBar.app
+cp -r TachyBar.app /Applications/
+open /Applications/TachyBar.app
 ```
 
 Then open the menu and enable **Avvia al login** ("Launch at login") to keep it
@@ -171,7 +171,7 @@ For development you can run it in the foreground instead:
 
 ### First run: Keychain permission
 
-The first time ClaudeBar reads your token, macOS may ask for permission to access
+The first time TachyBar reads your token, macOS may ask for permission to access
 `Claude Code-credentials`. Click **"Always Allow"** — after that it reads the
 token silently.
 
@@ -179,17 +179,20 @@ token silently.
 
 ## Configuration
 
-ClaudeBar works out of the box. To tweak it, edit and rebuild:
+Most settings live in the menu's **Preferenze** submenu — what the bar shows
+(session / weekly / auto), threshold notifications, the alert threshold, and the
+refresh interval. No rebuild needed.
 
-- **Refresh interval** — `fetchInterval` in `Sources/ClaudeBar/AppDelegate.swift`
-  (default 180s; the endpoint updates roughly once a minute).
+For deeper tweaks, edit `Sources/TachyBar/AppDelegate.swift`:
+
 - **Countdown tick rate** — `tickInterval` (default 30s, network-free).
-- **Menu-bar text** — `updateTitle()` in `AppDelegate.swift`.
+- **Color thresholds** — `usageColor()` (🟢 ≤64 · 🟡 65–84 · 🔴 ≥85).
+- **Menu-bar text** — `updateTitle()`.
 
 ### Debug / one-shot
 
 ```bash
-.build/release/ClaudeBar --print   # fetch once, print the snapshot, exit
+.build/release/TachyBar --print   # fetch once, print the snapshot, exit
 ```
 
 ---
@@ -207,7 +210,7 @@ ClaudeBar works out of the box. To tweak it, edit and rebuild:
 ## Rate limiting
 
 The usage endpoint is designed for occasional refreshes (the console has a
-manual refresh button). ClaudeBar therefore:
+manual refresh button). TachyBar therefore:
 
 - fetches at most once every ~3 minutes,
 - never fetches just because you opened the menu (it rebuilds from cache),
@@ -225,15 +228,15 @@ weekly, per-model, and credits where applicable).
 
 **Why don't my numbers match `ccusage`?**
 They measure different things. `ccusage` estimates from local token logs;
-ClaudeBar reads the official usage endpoint. See
-[Why ClaudeBar](#why-claudebar-and-how-it-differs-from-ccusage).
+TachyBar reads the official usage endpoint. See
+[Why TachyBar](#why-tachybar-and-how-it-differs-from-ccusage).
 
 **It shows `⚠︎ login`.**
-Your OAuth token expired. Open Claude Code to refresh it; ClaudeBar picks up the
+Your OAuth token expired. Open Claude Code to refresh it; TachyBar picks up the
 new token automatically.
 
 **It shows a 429 / rate-limit note.**
-Too many requests in a short window. ClaudeBar backs off and recovers on its
+Too many requests in a short window. TachyBar backs off and recovers on its
 own — no action needed.
 
 **Does it need Xcode?**

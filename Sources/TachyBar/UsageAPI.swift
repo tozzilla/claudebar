@@ -51,7 +51,7 @@ final class UsageAPI {
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("oauth-2025-04-20", forHTTPHeaderField: "anthropic-beta")
         request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
-        request.setValue("ClaudeBar/1.0 (menubar)", forHTTPHeaderField: "User-Agent")
+        request.setValue("TachyBar/1.1 (menubar)", forHTTPHeaderField: "User-Agent")
 
         let (data, response, netError) = syncGet(request)
         let status = response?.statusCode ?? 0
@@ -200,7 +200,7 @@ final class UsageAPI {
 // MARK: - Background poller
 
 final class Poller {
-    private let queue = DispatchQueue(label: "app.claudebar.poll")
+    private let queue = DispatchQueue(label: "app.tachybar.poll")
     private let api = UsageAPI()
 
     func pollAsync(_ completion: @escaping (LiveUsage) -> Void) {

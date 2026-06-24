@@ -56,7 +56,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 if satisfied && !was { self?.attemptFetch(manual: true, force: false) }
             }
         }
-        monitor.start(queue: DispatchQueue(label: "app.claudebar.net"))
+        monitor.start(queue: DispatchQueue(label: "app.tachybar.net"))
         pathMonitor = monitor
     }
 
@@ -377,7 +377,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 try SMAppService.mainApp.register()
             }
         } catch {
-            NSLog("ClaudeBar: login item toggle failed (run as .app to use this): \(error)")
+            NSLog("TachyBar: login item toggle failed (run as .app to use this): \(error)")
         }
     }
 

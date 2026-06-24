@@ -4,8 +4,8 @@
 .swiftpm/
 
 # Assembled app bundle (produced by build.sh) and release archives
-ClaudeBar.app/
-ClaudeBar-*.zip
+*.app/
+TachyBar-*.zip
 
 # macOS
 .DS_Store
