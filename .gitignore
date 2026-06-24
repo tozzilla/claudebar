@@ -1,0 +1,10 @@
+# Swift / SwiftPM build artifacts
+.build/
+*.xcodeproj
+.swiftpm/
+
+# Assembled app bundle (produced by build.sh)
+ClaudeBar.app/
+
+# macOS
+.DS_Store
