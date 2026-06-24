@@ -76,22 +76,47 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     // MARK: - Title (cheap, from cached data)
 
+    private let barFont = NSFont.menuBarFont(ofSize: 0)
+
+    /// Usage color thresholds: green ≤64, yellow 65–84, red ≥85.
+    private func usageColor(_ percent: Double) -> NSColor {
+        let p = Int(percent.rounded())
+        if p >= 85 { return .systemRed }
+        if p >= 65 { return .systemYellow }
+        return .systemGreen
+    }
+
     private func updateTitle() {
         guard let button = statusItem.button else { return }
-        if tokenExpired { button.title = "⚠︎ login"; return }
-        guard let u = last else { button.title = statusNote != nil ? "⚠︎" : "…"; return }
+        if tokenExpired { setPlainTitle(button, "⚠︎ login"); return }
+        guard let u = last else { setPlainTitle(button, statusNote != nil ? "⚠︎" : "…"); return }
 
         if let s = u.session {
-            var t = Fmt.percent(s.percent)
+            var suffix = ""
             if let reset = s.resetAt {
-                t += " · " + Fmt.duration(reset.timeIntervalSinceNow, compact: true)
+                suffix = " · " + Fmt.duration(reset.timeIntervalSinceNow, compact: true)
             }
-            button.title = t
+            button.attributedTitle = barTitle(Fmt.percent(s.percent), percent: s.percent, suffix: suffix)
         } else if let w = u.weekly.first {
-            button.title = Fmt.percent(w.percent) + " sett."
+            button.attributedTitle = barTitle(Fmt.percent(w.percent), percent: w.percent, suffix: " sett.")
         } else {
-            button.title = "—"
+            setPlainTitle(button, "—")
         }
+    }
+
+    /// Colored percentage + default-colored suffix for the menu-bar title.
+    private func barTitle(_ percentText: String, percent: Double, suffix: String) -> NSAttributedString {
+        let s = NSMutableAttributedString()
+        s.append(NSAttributedString(string: percentText,
+                                    attributes: [.foregroundColor: usageColor(percent), .font: barFont]))
+        if !suffix.isEmpty {
+            s.append(NSAttributedString(string: suffix, attributes: [.font: barFont]))
+        }
+        return s
+    }
+
+    private func setPlainTitle(_ button: NSStatusBarButton, _ text: String) {
+        button.attributedTitle = NSAttributedString(string: text, attributes: [.font: barFont])
     }
 
     // MARK: - Menu (rebuilt from cache on open; no network fetch on open)
@@ -125,7 +150,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             if let reset = s.resetAt {
                 line += " · reset tra \(Fmt.duration(reset.timeIntervalSinceNow)) (\(Fmt.time(reset)))"
             }
-            menu.addItem(info(line))
+            menu.addItem(coloredRow(line, colorPart: Fmt.percent(s.percent), percent: s.percent))
         }
 
         if !u.weekly.isEmpty {
@@ -136,14 +161,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 if let reset = w.resetAt {
                     line += " · reset \(Fmt.weekdayTime(reset))"
                 }
-                let item = info(line)
-                if w.isActive {
-                    item.attributedTitle = NSAttributedString(
-                        string: line,
-                        attributes: [.font: NSFont.boldSystemFont(ofSize: NSFont.systemFontSize)]
-                    )
-                }
-                menu.addItem(item)
+                menu.addItem(coloredRow(line, colorPart: Fmt.percent(w.percent), percent: w.percent, bold: w.isActive))
             }
         }
 
@@ -189,6 +207,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             string: title,
             attributes: [.font: NSFont.boldSystemFont(ofSize: NSFont.smallSystemFontSize)]
         )
+        return item
+    }
+
+    /// Info row whose percentage substring is tinted by usage color.
+    private func coloredRow(_ full: String, colorPart: String, percent: Double, bold: Bool = false) -> NSMenuItem {
+        let item = NSMenuItem(title: full, action: nil, keyEquivalent: "")
+        item.isEnabled = false
+        let baseFont = bold ? NSFont.boldSystemFont(ofSize: NSFont.systemFontSize) : NSFont.menuFont(ofSize: 0)
+        let attr = NSMutableAttributedString(
+            string: full, attributes: [.foregroundColor: NSColor.labelColor, .font: baseFont]
+        )
+        if let r = full.range(of: colorPart) {
+            attr.addAttribute(.foregroundColor, value: usageColor(percent), range: NSRange(r, in: full))
+        }
+        item.attributedTitle = attr
         return item
     }
 
